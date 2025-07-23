@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	cfgEndpointKey  = "endpoint"
-	cfgSecretIDKey  = "secret_id"
-	cfgSecretKeyKey = "secret_key"
-	cfgTopicIDKey   = "topic_id"
-	cfgRetriesKey   = "retries"
-	cfgTimeoutKey   = "timeout"
+	cfgEndpointKey     = "endpoint"
+	cfgSecretIDKey     = "secret_id"
+	cfgSecretKeyKey    = "secret_key"
+	cfgTopicIDKey      = "topic_id"
+	cfgRetriesKey      = "retries"
+	cfgTimeoutKey      = "timeout"
+	cfgInstanceInfoKey = "instance_info"
 
 	cfgNoFileKey   = "no-file"
 	cfgKeepFileKey = "keep-file"
@@ -95,7 +96,8 @@ func validateDriverOptions(opts map[string]string) error {
 			cfgRetriesKey,
 			cfgTimeoutKey,
 			cfgTemplateKey,
-			cfgFilterRegexKey:
+			cfgFilterRegexKey,
+			cfgInstanceInfoKey:
 		case "max-file", "max-size", "compress", "labels", "labels-regex", "env", "env-regex", "tag", "mode":
 		case cfgNoFileKey, cfgKeepFileKey:
 		default:
@@ -108,12 +110,13 @@ func validateDriverOptions(opts map[string]string) error {
 
 func parseClientConfig(containerDetails *ContainerDetails) (ClientConfig, error) {
 	clientConfig := ClientConfig{
-		Endpoint:  containerDetails.Config[cfgEndpointKey],
-		SecretID:  containerDetails.Config[cfgSecretIDKey],
-		SecretKey: containerDetails.Config[cfgSecretKeyKey],
-		TopicID:   containerDetails.Config[cfgTopicIDKey],
-		Retries:   defaultClientConfig.Retries,
-		Timeout:   defaultClientConfig.Timeout,
+		Endpoint:     containerDetails.Config[cfgEndpointKey],
+		SecretID:     containerDetails.Config[cfgSecretIDKey],
+		SecretKey:    containerDetails.Config[cfgSecretKeyKey],
+		TopicID:      containerDetails.Config[cfgTopicIDKey],
+		InstanceInfo: containerDetails.Config[cfgInstanceInfoKey],
+		Retries:      defaultClientConfig.Retries,
+		Timeout:      defaultClientConfig.Timeout,
 	}
 
 	if retries, ok := containerDetails.Config[cfgRetriesKey]; ok {

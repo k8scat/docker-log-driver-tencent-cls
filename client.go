@@ -12,10 +12,11 @@ import (
 )
 
 type ClientConfig struct {
-	Endpoint  string
-	SecretID  string
-	SecretKey string
-	TopicID   string
+	Endpoint     string
+	SecretID     string
+	SecretKey    string
+	TopicID      string
+	InstanceInfo string
 
 	// Retries is the number of retries to call the Tencent CLS API.
 	Retries int
@@ -86,6 +87,18 @@ func (c *Client) SendMessage(text string) error {
 	if err := json.Unmarshal([]byte(text), &addLogMap); err != nil {
 		c.logger.Debug("failed to unmarshal log", zap.String("log", text), zap.Error(err))
 		addLogMap["content"] = text
+	}
+
+	if c.cfg.InstanceInfo != "" {
+		instanceInfo := map[string]string{}
+		if err := json.Unmarshal([]byte(c.cfg.InstanceInfo), &instanceInfo); err != nil {
+			c.logger.Debug("failed to unmarshal instance info", zap.String("instanceInfo", c.cfg.InstanceInfo), zap.Error(err))
+			addLogMap["instance"] = c.cfg.InstanceInfo
+		} else {
+			for k, v := range instanceInfo {
+				addLogMap["__instance__."+k] = v
+			}
+		}
 	}
 
 	log := tencentcloud_cls_sdk_go.NewCLSLog(time.Now().Unix(), addLogMap)
