@@ -94,19 +94,21 @@ Restart Docker after changes: `systemctl restart docker`
 
 ## Options
 
-| Option               | Required | Default  | Description                                                                                  |
-| -------------------- | -------- | -------- | -------------------------------------------------------------------------------------------- |
-| endpoint             | Yes      |          | Tencent CLS Endpoint                                                                         |
-| secret_id            | Yes      |          | Tencent CLS Secret ID                                                                        |
-| secret_key           | Yes      |          | Tencent CLS Secret Key                                                                       |
-| topic_id             | Yes      |          | Tencent CLS Topic ID                                                                         |
-| template             | No       | {log}    | Message format template                                                                      |
-| filter-regex         | No       |          | Regex to filter logs                                                                         |
-| retries              | No       | 10       | Max retry attempts (0 = infinite)                                                            |
-| timeout              | No       | 10s      | API request timeout (units: ns, us/µs, ms, s, m, h)                                          |
-| no-file              | No       | false    | Disable log files (disables `docker logs`)                                                   |
-| keep-file            | No       | true    | Keep log files after container stop                                                          |
-| mode                 | No       | blocking | Log processing mode: `blocking`/`non-blocking`                                               |
+| Option                        | Required | Default  | Description                                                                                                                                       |
+| ----------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| endpoint                      | Yes      |          | Tencent CLS Endpoint                                                                                                                              |
+| secret_id                     | Yes      |          | Tencent CLS Secret ID                                                                                                                             |
+| secret_key                    | Yes      |          | Tencent CLS Secret Key                                                                                                                            |
+| topic_id                      | Yes      |          | Tencent CLS Topic ID                                                                                                                              |
+| template                      | No       | {log}    | Message format template                                                                                                                           |
+| filter-regex                  | No       |          | Regex to filter logs                                                                                                                              |
+| retries                       | No       | 10       | Max retry attempts (0 = infinite)                                                                                                                 |
+| timeout                       | No       | 10s      | API request timeout (units: ns, us/µs, ms, s, m, h)                                                                                               |
+| no-file                       | No       | false    | Disable log files (disables `docker logs`)                                                                                                        |
+| keep-file                     | No       | true     | Keep log files after container stop                                                                                                               |
+| mode                          | No       | blocking | Log processing mode: `blocking`/`non-blocking`                                                                                                    |
+| instance_info                 | No       |          | Instance info in JSON format                                                                                                                      |
+| append_container_details_keys | No       |          | Append container details keys, separated by comma. Available keys: `container_id`, `container_name`, `container_image_id`, `container_image_name` |
 
 ### Template Tags
 

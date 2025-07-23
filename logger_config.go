@@ -4,17 +4,19 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
 const (
-	cfgEndpointKey     = "endpoint"
-	cfgSecretIDKey     = "secret_id"
-	cfgSecretKeyKey    = "secret_key"
-	cfgTopicIDKey      = "topic_id"
-	cfgRetriesKey      = "retries"
-	cfgTimeoutKey      = "timeout"
-	cfgInstanceInfoKey = "instance_info"
+	cfgEndpointKey                   = "endpoint"
+	cfgSecretIDKey                   = "secret_id"
+	cfgSecretKeyKey                  = "secret_key"
+	cfgTopicIDKey                    = "topic_id"
+	cfgRetriesKey                    = "retries"
+	cfgTimeoutKey                    = "timeout"
+	cfgInstanceInfoKey               = "instance_info"
+	cfgAppendContainerDetailsKeysKey = "append_container_details_keys"
 
 	cfgNoFileKey   = "no-file"
 	cfgKeepFileKey = "keep-file"
@@ -97,7 +99,8 @@ func validateDriverOptions(opts map[string]string) error {
 			cfgTimeoutKey,
 			cfgTemplateKey,
 			cfgFilterRegexKey,
-			cfgInstanceInfoKey:
+			cfgInstanceInfoKey,
+			cfgAppendContainerDetailsKeysKey:
 		case "max-file", "max-size", "compress", "labels", "labels-regex", "env", "env-regex", "tag", "mode":
 		case cfgNoFileKey, cfgKeepFileKey:
 		default:
@@ -109,14 +112,21 @@ func validateDriverOptions(opts map[string]string) error {
 }
 
 func parseClientConfig(containerDetails *ContainerDetails) (ClientConfig, error) {
+	var appendContainerDetailsKeys []string
+	if containerDetails.Config[cfgAppendContainerDetailsKeysKey] != "" {
+		appendContainerDetailsKeys = strings.Split(containerDetails.Config[cfgAppendContainerDetailsKeysKey], ",")
+	}
+
 	clientConfig := ClientConfig{
-		Endpoint:     containerDetails.Config[cfgEndpointKey],
-		SecretID:     containerDetails.Config[cfgSecretIDKey],
-		SecretKey:    containerDetails.Config[cfgSecretKeyKey],
-		TopicID:      containerDetails.Config[cfgTopicIDKey],
-		InstanceInfo: containerDetails.Config[cfgInstanceInfoKey],
-		Retries:      defaultClientConfig.Retries,
-		Timeout:      defaultClientConfig.Timeout,
+		Endpoint:                   containerDetails.Config[cfgEndpointKey],
+		SecretID:                   containerDetails.Config[cfgSecretIDKey],
+		SecretKey:                  containerDetails.Config[cfgSecretKeyKey],
+		TopicID:                    containerDetails.Config[cfgTopicIDKey],
+		InstanceInfo:               containerDetails.Config[cfgInstanceInfoKey],
+		Retries:                    defaultClientConfig.Retries,
+		Timeout:                    defaultClientConfig.Timeout,
+		AppendContainerDetailsKeys: appendContainerDetailsKeys,
+		ContainerDetails:           containerDetails,
 	}
 
 	if retries, ok := containerDetails.Config[cfgRetriesKey]; ok {

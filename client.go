@@ -18,6 +18,9 @@ type ClientConfig struct {
 	TopicID      string
 	InstanceInfo string
 
+	AppendContainerDetailsKeys []string
+	ContainerDetails           *ContainerDetails
+
 	// Retries is the number of retries to call the Tencent CLS API.
 	Retries int
 
@@ -97,6 +100,21 @@ func (c *Client) SendMessage(text string) error {
 		} else {
 			for k, v := range instanceInfo {
 				addLogMap["__instance__."+k] = v
+			}
+		}
+	}
+
+	if len(c.cfg.AppendContainerDetailsKeys) > 0 {
+		for _, k := range c.cfg.AppendContainerDetailsKeys {
+			switch k {
+			case "container_id":
+				addLogMap["__container_details__.container_id"] = c.cfg.ContainerDetails.ContainerID
+			case "container_name":
+				addLogMap["__container_details__.container_name"] = c.cfg.ContainerDetails.ContainerName
+			case "container_image_id":
+				addLogMap["__container_details__.container_image_id"] = c.cfg.ContainerDetails.ContainerImageID
+			case "container_image_name":
+				addLogMap["__container_details__.container_image_name"] = c.cfg.ContainerDetails.ContainerImageName
 			}
 		}
 	}
