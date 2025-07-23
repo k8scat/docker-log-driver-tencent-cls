@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -81,7 +82,13 @@ func NewClient(logger *zap.Logger, cfg ClientConfig, limiterOpts ...ratelimit.Op
 
 // SendMessage sends a message to a Tencent CLS.
 func (c *Client) SendMessage(text string) error {
-	log := tencentcloud_cls_sdk_go.NewCLSLog(time.Now().Unix(), map[string]string{"content": text})
+	addLogMap := map[string]string{}
+	if err := json.Unmarshal([]byte(text), &addLogMap); err != nil {
+		c.logger.Debug("failed to unmarshal log", zap.String("log", text), zap.Error(err))
+		addLogMap["content"] = text
+	}
+
+	log := tencentcloud_cls_sdk_go.NewCLSLog(time.Now().Unix(), addLogMap)
 	err := c.producer.SendLog(c.cfg.TopicID, log, c.callback)
 	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
