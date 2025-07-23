@@ -342,10 +342,12 @@ func (s *logStream) Close() error {
 			}
 		}
 
-		if s.jsonLogger != nil && !s.keepFile {
+		if s.jsonLogger != nil {
 			if err := s.jsonLogger.Close(); err != nil {
 				errs = append(errs, fmt.Errorf("failed to close json logger: %w", err))
 			}
+		}
+		if !s.keepFile && s.containerDetails.LogPath != "" {
 			folder := filepath.Dir(s.containerDetails.LogPath)
 			if err := s.fs.RemoveAll(folder); err != nil {
 				errs = append(errs, fmt.Errorf("failed to remove log dir: %w", err))
@@ -434,6 +436,9 @@ func (osFS) MkdirAll(path string, perm os.FileMode) error {
 }
 
 func (osFS) RemoveAll(path string) error {
+	if path == "" {
+		return nil
+	}
 	path = filepath.Clean(path)
 	return os.RemoveAll(path)
 }
