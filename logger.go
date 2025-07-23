@@ -30,12 +30,12 @@ var (
 	errLoggerClosed = errors.New("logger is closed")
 )
 
-// client is an interface that represents a Telegram client.
+// client is an interface that represents a Tencent CLS client.
 type client interface {
 	SendMessage(message string) error
 }
 
-// TelegramLoggerOption is a function that configures a TelegramLogger.
+// TencentCLSLoggerOption is a function that configures a TencentCLSLogger.
 type TencentCLSLoggerOption func(*TencentCLSLogger)
 
 // WithBufferCapacity sets the buffer capacity of the logger.
@@ -54,7 +54,7 @@ func WithMaxLogMessageChars(maxLen int) TencentCLSLoggerOption {
 	}
 }
 
-// TelegramLogger is a logger that sends logs to Telegram.
+// TencentCLSLogger is a logger that sends logs to Tencent CLS.
 // It implements the logger.Logger interface.
 type TencentCLSLogger struct {
 	client client
@@ -75,7 +75,7 @@ type TencentCLSLogger struct {
 
 var _ = (logger.Logger)(&TencentCLSLogger{})
 
-// NewTelegramLogger creates a new TelegramLogger.
+// NewTencentCLSLogger creates a new TencentCLSLogger.
 func NewTencentCLSLogger(
 	logger *zap.Logger,
 	containerDetails *ContainerDetails,
@@ -96,7 +96,7 @@ func NewTencentCLSLogger(
 
 	client, err := NewClient(logger, cfg.ClientConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Telegram Client: %w", err)
+		return nil, fmt.Errorf("failed to create Tencent CLS Client: %w", err)
 	}
 
 	bufferCapacity := defaultBufferCapacity

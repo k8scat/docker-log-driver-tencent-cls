@@ -72,7 +72,7 @@ func NewClient(logger *zap.Logger, cfg ClientConfig, limiterOpts ...ratelimit.Op
 	}, nil
 }
 
-// SendMessage sends a message to a Telegram chat.
+// SendMessage sends a message to a Tencent CLS.
 func (c *Client) SendMessage(text string) error {
 	log := tencentcloud_cls_sdk_go.NewCLSLog(time.Now().Unix(), map[string]string{"content": text})
 	err := c.producerInstance.SendLog(c.cfg.TopicID, log, callback)
