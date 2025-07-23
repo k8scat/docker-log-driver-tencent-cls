@@ -6,7 +6,9 @@ Docker logging driver that forwards container logs to Tencent CLS.
 
 ```bash
 # Install plugin
-docker plugin install k8scat/docker-log-driver-tencent-cls:latest --alias tencent-cls --grant-all-permissions
+docker plugin install k8scat/docker-log-driver-tencent-cls:latest \
+  --alias tencent-cls \
+  --grant-all-permissions
 
 # Run container with the driver
 docker run --log-driver=tencent-cls \
@@ -23,11 +25,14 @@ docker run --log-driver=tencent-cls \
 
 ```bash
 # Install
-docker plugin install k8scat/docker-log-driver-tencent-cls:latest --alias tencent-cls --grant-all-permissions
+docker plugin install k8scat/docker-log-driver-tencent-cls:latest \
+  --alias tencent-cls \
+  --grant-all-permissions
 
 # Upgrade
 docker plugin disable tencent-cls --force
-docker plugin upgrade tencent-cls k8scat/docker-log-driver-tencent-cls:latest --grant-all-permissions
+docker plugin upgrade tencent-cls k8scat/docker-log-driver-tencent-cls:latest \
+  --grant-all-permissions
 docker plugin enable tencent-cls
 systemctl restart docker
 
