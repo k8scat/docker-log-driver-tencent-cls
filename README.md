@@ -89,29 +89,26 @@ Restart Docker after changes: `systemctl restart docker`
 
 ## Options
 
-| Option               | Required | Default                  | Description                                                                                  |
-|----------------------|----------|--------------------------|----------------------------------------------------------------------------------------------|
-| endpoint                  | Yes       |  | Tencent CLS Endpoint                                                                             |
-| secret_id                | Yes      |                          | Tencent CLS Secret ID                                                                               |
-| secret_key              | Yes      |                          | Tencent CLS Secret Key                                                                              |
-| topic_id              | Yes      |                          | Tencent CLS Topic ID                                                                              |
-| template             | No       | {log}                    | Message format template                                                                      |
-| filter-regex         | No       |                          | Regex to filter logs                                                                         |
-| retries              | No       | 10                        | Max retry attempts (0 = infinite)                                                            |
-| timeout              | No       | 10s                      | API request timeout (units: ns, us/µs, ms, s, m, h)                                          |
-| no-file              | No       | false                    | Disable log files (disables `docker logs`)                                                   |
-| keep-file            | No       | false                    | Keep log files after container stop                                                          |
-| mode                 | No       | blocking                 | Log processing mode: `blocking`/`non-blocking`                                               |
-| max-buffer-size      | No       | 1m                       | Max buffer size (Example values: 32, 32b, 32B, 32k, 32K, 32kb, 32Kb, 32Mb, 32Gb, 32Tb, 32Pb) |
-| batch-enabled        | No       | true                     | Enable batch sending                                                                         |
-| batch-flush-interval | No       | 3s                       | Batch flush interval (units: ns, us/µs, ms, s, m, h)                                         |
+| Option               | Required | Default  | Description                                                                                  |
+| -------------------- | -------- | -------- | -------------------------------------------------------------------------------------------- |
+| endpoint             | Yes      |          | Tencent CLS Endpoint                                                                         |
+| secret_id            | Yes      |          | Tencent CLS Secret ID                                                                        |
+| secret_key           | Yes      |          | Tencent CLS Secret Key                                                                       |
+| topic_id             | Yes      |          | Tencent CLS Topic ID                                                                         |
+| template             | No       | {log}    | Message format template                                                                      |
+| filter-regex         | No       |          | Regex to filter logs                                                                         |
+| retries              | No       | 10       | Max retry attempts (0 = infinite)                                                            |
+| timeout              | No       | 10s      | API request timeout (units: ns, us/µs, ms, s, m, h)                                          |
+| no-file              | No       | false    | Disable log files (disables `docker logs`)                                                   |
+| keep-file            | No       | false    | Keep log files after container stop                                                          |
+| mode                 | No       | blocking | Log processing mode: `blocking`/`non-blocking`                                               |
 
 ### Template Tags
 
 To customize the log message format using the `template` option, you can use the following tags:
 
 | Tag                 | Description        |
-|---------------------|--------------------|
+| ------------------- | ------------------ |
 | {log}               | Log message        |
 | {timestamp}         | Log timestamp      |
 | {container_id}      | Short container ID |

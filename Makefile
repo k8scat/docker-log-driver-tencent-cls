@@ -3,10 +3,12 @@ V := @
 PLUGIN_NAME ?= k8scat/docker-log-driver-tencent-cls
 PLUGIN_TAG ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags 2>/dev/null || echo "dev")
 
+VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags 2>/dev/null || echo "dev")
+
 define build-rootfs
 	$(V)rm -rf ./rootfs || true
 	$(V)mkdir rootfs || true
-	$(V)docker build -t rootfsimage -f Dockerfile.build .
+	$(V)docker build -t rootfsimage -f Dockerfile.build --build-arg VERSION=$(VERSION) .
 
 	ID=$$(docker create rootfsimage true) && \
 	(docker export $$ID | tar -x -C rootfs) && \

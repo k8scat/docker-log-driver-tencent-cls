@@ -46,8 +46,10 @@ func (c ClientConfig) Validate() error {
 // Client is a Tencent CLS client.
 // It is used to send messages to a Tencent CLS topic.
 type Client struct {
-	cfg              ClientConfig
-	producerInstance *tencentcloud_cls_sdk_go.AsyncProducerClient
+	logger   *zap.Logger
+	cfg      ClientConfig
+	producer *tencentcloud_cls_sdk_go.AsyncProducerClient
+	callback *clsCallback
 }
 
 // NewClient creates a new Tencent CLS client.
@@ -65,17 +67,22 @@ func NewClient(logger *zap.Logger, cfg ClientConfig, limiterOpts ...ratelimit.Op
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Tencent CLS Client: %w", err)
 	}
+	producerInstance.Start()
 
 	return &Client{
-		cfg:              cfg,
-		producerInstance: producerInstance,
+		logger:   logger,
+		cfg:      cfg,
+		producer: producerInstance,
+		callback: &clsCallback{
+			logger: logger,
+		},
 	}, nil
 }
 
 // SendMessage sends a message to a Tencent CLS.
 func (c *Client) SendMessage(text string) error {
 	log := tencentcloud_cls_sdk_go.NewCLSLog(time.Now().Unix(), map[string]string{"content": text})
-	err := c.producerInstance.SendLog(c.cfg.TopicID, log, callback)
+	err := c.producer.SendLog(c.cfg.TopicID, log, c.callback)
 	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
@@ -83,22 +90,24 @@ func (c *Client) SendMessage(text string) error {
 	return nil
 }
 
-var callback = &clsCallback{}
+func (c *Client) Close() error {
+	return c.producer.Close(60000)
+}
 
 type clsCallback struct {
+	logger *zap.Logger
 }
 
 func (callback *clsCallback) Success(result *tencentcloud_cls_sdk_go.Result) {
-	attemptList := result.GetReservedAttempts()
-	for _, attempt := range attemptList {
-		fmt.Printf("%+v \n", attempt)
-	}
+	callback.logger.Debug("cls callback success", zap.Any("attempts", result.GetReservedAttempts()))
 }
 func (callback *clsCallback) Fail(result *tencentcloud_cls_sdk_go.Result) {
-	fmt.Println(result.IsSuccessful())
-	fmt.Println(result.GetErrorCode())
-	fmt.Println(result.GetErrorMessage())
-	fmt.Println(result.GetReservedAttempts())
-	fmt.Println(result.GetRequestId())
-	fmt.Println(result.GetTimeStampMs())
+	callback.logger.Error("cls callback fail",
+		zap.Any("isSuccessful", result.IsSuccessful()),
+		zap.Any("errorCode", result.GetErrorCode()),
+		zap.Any("errorMessage", result.GetErrorMessage()),
+		zap.Any("attempts", result.GetReservedAttempts()),
+		zap.Any("requestId", result.GetRequestId()),
+		zap.Any("timeStampMs", result.GetTimeStampMs()),
+	)
 }

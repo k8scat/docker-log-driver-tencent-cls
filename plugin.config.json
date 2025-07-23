@@ -16,7 +16,7 @@
       {
         "name": "ENV",
         "description": "Set environment to run plugin in. Valid values are: production, development.",
-        "value": "development",
+        "value": "production",
         "settable": [
           "value"
         ]

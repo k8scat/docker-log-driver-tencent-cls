@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/docker/docker/daemon/logger"
 	"github.com/valyala/fasttemplate"
@@ -17,9 +15,6 @@ import (
 const (
 	// driverName is the name of the driver.
 	driverName = "tencent-cls"
-
-	// defaultLogMessageChars is the default maximum number of characters in a log message.
-	defaultLogMessageChars = 4096
 
 	// defaultBufferCapacity is the default buffer capacity of the logger.
 	defaultBufferCapacity = 10_000
@@ -33,35 +28,19 @@ var (
 // client is an interface that represents a Tencent CLS client.
 type client interface {
 	SendMessage(message string) error
+	Close() error
 }
 
 // TencentCLSLoggerOption is a function that configures a TencentCLSLogger.
 type TencentCLSLoggerOption func(*TencentCLSLogger)
-
-// WithBufferCapacity sets the buffer capacity of the logger.
-func WithBufferCapacity(capacity int) TencentCLSLoggerOption {
-	return func(l *TencentCLSLogger) {
-		if capacity > 0 {
-			l.buffer = make(chan string, capacity)
-		}
-	}
-}
-
-// WithMaxLogMessageChars sets the maximum number of characters in a log message.
-func WithMaxLogMessageChars(maxLen int) TencentCLSLoggerOption {
-	return func(l *TencentCLSLogger) {
-		l.maxLogMessageChars = maxLen
-	}
-}
 
 // TencentCLSLogger is a logger that sends logs to Tencent CLS.
 // It implements the logger.Logger interface.
 type TencentCLSLogger struct {
 	client client
 
-	formatter          *messageFormatter
-	cfg                *loggerConfig
-	maxLogMessageChars int
+	formatter *messageFormatter
+	cfg       *loggerConfig
 
 	buffer chan string
 	mu     sync.Mutex
@@ -99,33 +78,18 @@ func NewTencentCLSLogger(
 		return nil, fmt.Errorf("failed to create Tencent CLS Client: %w", err)
 	}
 
-	bufferCapacity := defaultBufferCapacity
-	if cfg.MaxBufferSize <= 0 {
-		bufferCapacity = 0
-	}
-	buffer := make(chan string, bufferCapacity)
-
 	l := &TencentCLSLogger{
-		client:             client,
-		formatter:          formatter,
-		cfg:                cfg,
-		maxLogMessageChars: defaultLogMessageChars,
-		buffer:             buffer,
-		partialLogsBuffer:  newPartialLogBuffer(),
-		closed:             make(chan struct{}),
-		logger:             logger,
+		client:            client,
+		formatter:         formatter,
+		cfg:               cfg,
+		partialLogsBuffer: newPartialLogBuffer(),
+		closed:            make(chan struct{}),
+		logger:            logger,
 	}
 
 	for _, opt := range opts {
 		opt(l)
 	}
-
-	l.wg.Add(1)
-	runner := l.runImmediate
-	if cfg.BatchEnabled {
-		runner = l.runBatching
-	}
-	go runner()
 
 	return l, nil
 }
@@ -156,151 +120,8 @@ func (l *TencentCLSLogger) Log(log *logger.Message) error {
 	}
 
 	text := l.formatter.Format(log)
-	// Split the message if it exceeds the maximum number of characters.
-	if utf8.RuneCountInString(text) > l.maxLogMessageChars {
-		runes := []rune(text)
-		for len(runes) > 0 {
-			end := l.maxLogMessageChars
-			if len(runes) < end {
-				end = len(runes)
-			}
-			slog := string(runes[:end])
-			runes = runes[end:]
-			if err := l.enqueue(slog); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	if err := l.enqueue(text); err != nil {
-		return err
-	}
-
+	l.send(text)
 	return nil
-}
-
-func (l *TencentCLSLogger) enqueue(log string) error {
-	if l.cfg.MaxBufferSize <= 0 {
-		l.buffer <- log // May block.
-		return nil
-	}
-
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	select {
-	case l.buffer <- log:
-		return nil
-	case <-l.closed:
-		return errLoggerClosed
-	default:
-		// Buffer is full.
-		select {
-		case <-l.buffer:
-			// Drop the oldest message.
-		default:
-			// Buffer was empty.
-		}
-
-		// Try to enqueue the new message again.
-		select {
-		case l.buffer <- log:
-			return nil
-		case <-l.closed:
-			return errLoggerClosed
-		default:
-			return errors.New("failed to enqueue message after dropping oldest")
-		}
-	}
-}
-
-func (l *TencentCLSLogger) runImmediate() {
-	defer l.wg.Done()
-
-	drain := func() {
-		for log := range l.buffer {
-			l.send(log)
-		}
-	}
-	defer drain()
-
-	for {
-		select {
-		case log, ok := <-l.buffer:
-			if !ok {
-				return
-			}
-			l.send(log)
-		case <-l.closed:
-			return
-		}
-	}
-}
-
-func (l *TencentCLSLogger) runBatching() {
-	defer l.wg.Done()
-
-	ticker := time.NewTicker(l.cfg.BatchFlushInterval)
-	defer ticker.Stop()
-
-	var (
-		batch          bytes.Buffer
-		batchRuneCount int
-	)
-
-	maxBytes := 4 * l.maxLogMessageChars // Unicode characters are up to 4 bytes
-	batch.Grow(maxBytes)
-
-	flush := func() {
-		if batch.Len() == 0 {
-			return
-		}
-
-		if batch.Bytes()[batch.Len()-1] == '\n' {
-			batch.Truncate(batch.Len() - 1)
-			batchRuneCount--
-		}
-
-		l.send(batch.String())
-
-		batch.Reset()
-		batchRuneCount = 0
-	}
-
-	add := func(log string) {
-		logLength := utf8.RuneCountInString(log) + 1
-
-		batch.WriteString(log)
-		batch.WriteByte('\n')
-		batchRuneCount += logLength
-
-		if batchRuneCount >= l.maxLogMessageChars {
-			flush()
-		}
-	}
-
-	drain := func() {
-		for log := range l.buffer {
-			add(log)
-		}
-	}
-	defer drain()
-	defer flush()
-
-	for {
-		select {
-		case log, ok := <-l.buffer:
-			if !ok {
-				return
-			}
-			add(log)
-		case <-ticker.C:
-			flush()
-		case <-l.closed:
-			return
-		}
-	}
 }
 
 func (l *TencentCLSLogger) send(log string) {
@@ -318,9 +139,10 @@ func (l *TencentCLSLogger) Close() error {
 		return nil
 	}
 	close(l.closed)
-	close(l.buffer)
 
-	l.wg.Wait()
+	if err := l.client.Close(); err != nil {
+		l.logger.Error("failed to close Tencent CLS Client", zap.Error(err))
+	}
 
 	return nil
 }
