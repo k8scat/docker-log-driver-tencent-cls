@@ -1,0 +1,16 @@
+FROM golang:1.23.3-bullseye as builder
+
+ARG VERSION
+WORKDIR /src
+COPY . .
+
+RUN go build -v -o /usr/bin/tencent-cls-driver -ldflags "-s -v -w -X 'main.version=${VERSION}'" .
+
+FROM debian:bullseye-slim
+RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/bin/tencent-cls-driver /usr/bin/tencent-cls-driver
+
+RUN chmod +x /usr/bin/tencent-cls-driver

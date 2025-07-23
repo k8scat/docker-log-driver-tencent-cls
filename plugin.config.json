@@ -1,0 +1,33 @@
+{
+    "description": "Tencent CLS Logging Driver",
+    "entrypoint": [
+      "/usr/bin/tencent-cls-driver"
+    ],
+    "network": {
+      "type": "host"
+    },
+    "interface": {
+      "types": [
+        "docker.logdriver/1.0"
+      ],
+      "socket": "tencent-cls.sock"
+    },
+    "env": [
+      {
+        "name": "ENV",
+        "description": "Set environment to run plugin in. Valid values are: production, development.",
+        "value": "development",
+        "settable": [
+          "value"
+        ]
+      },
+      {
+        "name": "LOG_LEVEL",
+        "description": "Set log level to output for plugin logs. Valid values are: debug, info, warn, error, fatal, panic.",
+        "value": "info",
+        "settable": [
+          "value"
+        ]
+      }
+    ]
+  }
