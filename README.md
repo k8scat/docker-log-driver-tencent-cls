@@ -100,7 +100,7 @@ Restart Docker after changes: `systemctl restart docker`
 | retries              | No       | 10       | Max retry attempts (0 = infinite)                                                            |
 | timeout              | No       | 10s      | API request timeout (units: ns, us/µs, ms, s, m, h)                                          |
 | no-file              | No       | false    | Disable log files (disables `docker logs`)                                                   |
-| keep-file            | No       | false    | Keep log files after container stop                                                          |
+| keep-file            | No       | true    | Keep log files after container stop                                                          |
 | mode                 | No       | blocking | Log processing mode: `blocking`/`non-blocking`                                               |
 
 ### Template Tags

@@ -95,7 +95,7 @@ func (d *Driver) StartLogging(streamPath string, containerDetails *ContainerDeta
 	if err != nil {
 		return nil, fmt.Errorf("invalid value for %q option: %w", cfgNoFileKey, err)
 	}
-	stream.keepFile, err = parseBool(containerDetails.Config[cfgKeepFileKey], false)
+	stream.keepFile, err = parseBool(containerDetails.Config[cfgKeepFileKey], true)
 	if err != nil {
 		return nil, fmt.Errorf("invalid value for %q option: %w", cfgKeepFileKey, err)
 	}
