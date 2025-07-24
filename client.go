@@ -115,6 +115,22 @@ func (c *Client) SendMessage(text string) error {
 				addLogMap["__container_details__.container_image_id"] = c.cfg.ContainerDetails.ContainerImageID
 			case "container_image_name":
 				addLogMap["__container_details__.container_image_name"] = c.cfg.ContainerDetails.ContainerImageName
+			case "container_created":
+				addLogMap["__container_details__.container_created"] = c.cfg.ContainerDetails.ContainerCreated.Format(time.RFC3339)
+			case "container_env":
+				addLogMap["__container_details__.container_env"] = c.mustMarshal(c.cfg.ContainerDetails.ContainerEnv)
+			case "container_labels":
+				addLogMap["__container_details__.container_labels"] = c.mustMarshal(c.cfg.ContainerDetails.ContainerLabels)
+			case "container_entrypoint":
+				addLogMap["__container_details__.container_entrypoint"] = c.cfg.ContainerDetails.ContainerEntrypoint
+			case "container_args":
+				addLogMap["__container_details__.container_args"] = c.mustMarshal(c.cfg.ContainerDetails.ContainerArgs)
+			case "log_path":
+				addLogMap["__container_details__.container_log_path"] = c.cfg.ContainerDetails.LogPath
+			case "daemon_name":
+				addLogMap["__container_details__.daemon_name"] = c.cfg.ContainerDetails.DaemonName
+			case "config":
+				addLogMap["__container_details__.config"] = c.mustMarshal(c.cfg.ContainerDetails.Config)
 			}
 		}
 	}
@@ -126,6 +142,15 @@ func (c *Client) SendMessage(text string) error {
 	}
 
 	return nil
+}
+
+func (c *Client) mustMarshal(v any) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		c.logger.Warn("failed to marshal", zap.Any("value", v), zap.Error(err))
+		return ""
+	}
+	return string(b)
 }
 
 func (c *Client) Close() error {

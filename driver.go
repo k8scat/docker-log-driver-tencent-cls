@@ -37,7 +37,7 @@ type Driver struct {
 	newTencentCLSLogger newTencentCLSLoggerFunc
 	processLogs         func(stream *logStream)
 
-	zapLogger *zap.Logger
+	logger *zap.Logger
 }
 
 func NewDriver(zapLogger *zap.Logger) *Driver {
@@ -52,7 +52,7 @@ func NewDriver(zapLogger *zap.Logger) *Driver {
 			}
 			return l, nil
 		},
-		zapLogger: zapLogger,
+		logger: zapLogger,
 	}
 
 	driver.processLogs = func(stream *logStream) {
@@ -63,6 +63,8 @@ func NewDriver(zapLogger *zap.Logger) *Driver {
 }
 
 func (d *Driver) StartLogging(streamPath string, containerDetails *ContainerDetails) (stream *logStream, err error) {
+	d.logger.Info("starting logging", zap.String("stream_path", streamPath), zap.Any("container_details", containerDetails))
+
 	d.mu.RLock()
 	if _, ok := d.streams[streamPath]; ok {
 		d.mu.RUnlock()
@@ -74,7 +76,7 @@ func (d *Driver) StartLogging(streamPath string, containerDetails *ContainerDeta
 	stream = &logStream{
 		streamPath:       streamPath,
 		containerDetails: containerDetails,
-		logger:           d.zapLogger.Named(name),
+		logger:           d.logger.Named(name),
 		fs:               d.fs,
 		stop:             make(chan struct{}),
 	}
@@ -85,7 +87,7 @@ func (d *Driver) StartLogging(streamPath string, containerDetails *ContainerDeta
 		}
 
 		if err := stream.Close(); err != nil {
-			d.zapLogger.Error("failed to close stream", zap.Error(err))
+			d.logger.Error("failed to close stream", zap.Error(err))
 		}
 
 		stream = nil
@@ -112,7 +114,7 @@ func (d *Driver) StartLogging(streamPath string, containerDetails *ContainerDeta
 		}
 	}
 
-	stream.tencentCLSLogger, err = d.newTencentCLSLogger(d.zapLogger, containerDetails)
+	stream.tencentCLSLogger, err = d.newTencentCLSLogger(d.logger, containerDetails)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tencent cls logger: %w", err)
 	}
@@ -146,7 +148,7 @@ func (d *Driver) StartLogging(streamPath string, containerDetails *ContainerDeta
 func (d *Driver) defaultProcessLogs(stream *logStream, processedNotifier chan<- struct{}) {
 	defer func() {
 		if err := stream.Close(); err != nil {
-			d.zapLogger.Error("failed to close stream", zap.Error(err))
+			d.logger.Error("failed to close stream", zap.Error(err))
 		}
 	}()
 
@@ -229,7 +231,7 @@ func (d *Driver) ReadLogs(ctx context.Context, containerID string, readConfig *R
 		config:    readConfig,
 		r:         jsonLogReader,
 		w:         w,
-		zapLogger: d.zapLogger,
+		zapLogger: d.logger,
 	}
 	go logReader.ReadLogs(ctx)
 
