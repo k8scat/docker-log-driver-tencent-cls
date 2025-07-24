@@ -15,9 +15,6 @@ import (
 const (
 	// driverName is the name of the driver.
 	driverName = "tencent-cls"
-
-	// defaultBufferCapacity is the default buffer capacity of the logger.
-	defaultBufferCapacity = 10_000
 )
 
 var (
@@ -42,12 +39,10 @@ type TencentCLSLogger struct {
 	formatter *messageFormatter
 	cfg       *loggerConfig
 
-	buffer chan string
-	mu     sync.Mutex
+	mu sync.Mutex
 
 	partialLogsBuffer *partialLogBuffer
 
-	wg     sync.WaitGroup
 	closed chan struct{}
 	logger *zap.Logger
 }

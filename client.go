@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	tencentcloud_cls_sdk_go "github.com/tencentcloud/tencentcloud-cls-sdk-go"
@@ -133,6 +134,11 @@ func (c *Client) SendMessage(text string) error {
 				addLogMap["__container_details__.config"] = c.mustMarshal(c.cfg.ContainerDetails.Config)
 			}
 		}
+	}
+
+	hostname, _ := os.Hostname()
+	if hostname != "" {
+		addLogMap["__hostname__"] = hostname
 	}
 
 	log := tencentcloud_cls_sdk_go.NewCLSLog(time.Now().Unix(), addLogMap)
