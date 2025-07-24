@@ -1,5 +1,9 @@
 FROM golang:1.23.3-bullseye as builder
 
+LABEL maintainer="k8scat <k8scat@gmail.com>"
+LABEL homepage="https://github.com/k8scat/docker-log-driver-tencent-cls"
+LABEL description="Tencent CLS Logging Driver"
+
 ARG VERSION
 WORKDIR /src
 COPY . .
