@@ -1,5 +1,7 @@
 # Tencent CLS Log Driver
 
+[中文](./README_zh.md)
+
 Docker logging driver that forwards container logs to Tencent CLS.
 
 ## Quick Start
