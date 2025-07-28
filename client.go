@@ -85,19 +85,49 @@ func NewClient(logger *zap.Logger, cfg ClientConfig, limiterOpts ...ratelimit.Op
 	}, nil
 }
 
+func text2LogMap(text string) map[string]string {
+	var data map[string]any
+	if err := json.Unmarshal([]byte(text), &data); err != nil {
+		return map[string]string{"__original_text__": text}
+	}
+
+	// Pre-allocate map with estimated capacity to reduce allocations
+	// +1 for the __original_text__ field
+	result := make(map[string]string, len(data)+1)
+	result["__original_text__"] = text
+
+	// Convert all values to strings with optimized type handling
+	for k, v := range data {
+		switch val := v.(type) {
+		case string:
+			result[k] = val
+		case nil:
+			result[k] = ""
+		case bool:
+			if val {
+				result[k] = "true"
+			} else {
+				result[k] = "false"
+			}
+		case float64:
+			// JSON numbers are always float64
+			result[k] = fmt.Sprintf("%.6g", val)
+		default:
+			result[k] = fmt.Sprintf("%v", val)
+		}
+	}
+	return result
+}
+
 // SendMessage sends a message to a Tencent CLS.
 func (c *Client) SendMessage(text string) error {
-	addLogMap := map[string]string{}
-	if err := json.Unmarshal([]byte(text), &addLogMap); err != nil {
-		c.logger.Debug("failed to unmarshal log", zap.String("log", text), zap.Error(err))
-		addLogMap["content"] = text
-	}
+	addLogMap := text2LogMap(text)
 
 	if c.cfg.InstanceInfo != "" {
 		instanceInfo := map[string]string{}
 		if err := json.Unmarshal([]byte(c.cfg.InstanceInfo), &instanceInfo); err != nil {
 			c.logger.Debug("failed to unmarshal instance info", zap.String("instanceInfo", c.cfg.InstanceInfo), zap.Error(err))
-			addLogMap["instance"] = c.cfg.InstanceInfo
+			addLogMap["__original_instance__"] = c.cfg.InstanceInfo
 		} else {
 			for k, v := range instanceInfo {
 				addLogMap["__instance__."+k] = v
@@ -136,13 +166,14 @@ func (c *Client) SendMessage(text string) error {
 		}
 	}
 
-	hostname, _ := os.Hostname()
-	if hostname != "" {
-		addLogMap["__hostname__"] = hostname
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = err.Error()
 	}
+	addLogMap["__hostname__"] = hostname
 
 	log := tencentcloud_cls_sdk_go.NewCLSLog(time.Now().Unix(), addLogMap)
-	err := c.producer.SendLog(c.cfg.TopicID, log, c.callback)
+	err = c.producer.SendLog(c.cfg.TopicID, log, c.callback)
 	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
