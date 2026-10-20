@@ -1,6 +1,6 @@
 module github.com/k8scat/docker-log-driver-tencent-cls
 
-go 1.23.3
+go 1.24
 
 require (
 	github.com/containerd/fifo v1.1.0
@@ -29,7 +29,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
